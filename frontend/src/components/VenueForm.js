@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import { venueAPI } from "../services/api"
+import { motion, AnimatePresence } from "framer-motion"
 
 const VenueForm = ({ onVenueAdded }) => {
   const [formData, setFormData] = useState({
@@ -77,17 +78,71 @@ const VenueForm = ({ onVenueAdded }) => {
   }
 
   return (
-    <div className="venue-form-container">
-      <h2>Add New Venue</h2>
+    <motion.div
+      className="venue-form-container"
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.6 }}
+      style={{ maxWidth: "800px", margin: "0 auto", padding: "2rem" }}
+    >
+      <h2
+        style={{
+          fontSize: "2.5rem",
+          marginBottom: "2rem",
+          background: "linear-gradient(135deg, var(--primary), var(--primary-light))",
+          WebkitBackgroundClip: "text",
+          WebkitTextFillColor: "transparent",
+          backgroundClip: "text",
+          fontWeight: "700",
+          textAlign: "center",
+        }}
+      >
+        Add New Venue
+      </h2>
 
-      {success && <div className="success-message">✅ Venue created successfully!</div>}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            className="success-message"
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            style={{ marginBottom: "1.5rem" }}
+          >
+            ✅ Venue created successfully!
+          </motion.div>
+        )}
 
-      {error && <div className="error-message">{error}</div>}
+        {error && (
+          <motion.div
+            className="error-message"
+            initial={{ opacity: 0, y: -20, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: -20, scale: 0.9 }}
+            transition={{ duration: 0.3 }}
+            style={{ marginBottom: "1.5rem" }}
+          >
+            ❌ {error}
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="venue-form">
-        <div className="form-row">
+      <form
+        onSubmit={handleSubmit}
+        className="venue-form glass"
+        style={{
+          padding: "2.5rem",
+          borderRadius: "25px",
+          border: "1px solid var(--glass-border)",
+          boxShadow: "var(--shadow-glass)",
+        }}
+      >
+        <div className="form-row" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem" }}>
           <div className="form-group">
-            <label htmlFor="name">Venue Name *</label>
+            <label htmlFor="name" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
+              Venue Name *
+            </label>
             <input
               type="text"
               id="name"
@@ -96,11 +151,23 @@ const VenueForm = ({ onVenueAdded }) => {
               onChange={handleInputChange}
               required
               placeholder="Enter venue name"
+              style={{
+                width: "100%",
+                padding: "0.8rem 1rem",
+                borderRadius: "10px",
+                border: "1px solid var(--glass-border)",
+                background: "rgba(255, 255, 255, 0.5)",
+                backdropFilter: "blur(10px)",
+                fontSize: "1rem",
+                color: "var(--text-primary)",
+              }}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="location">Location *</label>
+            <label htmlFor="location" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
+              Location *
+            </label>
             <input
               type="text"
               id="location"
@@ -109,12 +176,24 @@ const VenueForm = ({ onVenueAdded }) => {
               onChange={handleInputChange}
               required
               placeholder="Enter venue location"
+              style={{
+                width: "100%",
+                padding: "0.8rem 1rem",
+                borderRadius: "10px",
+                border: "1px solid var(--glass-border)",
+                background: "rgba(255, 255, 255, 0.5)",
+                backdropFilter: "blur(10px)",
+                fontSize: "1rem",
+                color: "var(--text-primary)",
+              }}
             />
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="description">Description *</label>
+        <div className="form-group" style={{ marginTop: "1.5rem" }}>
+          <label htmlFor="description" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
+            Description *
+          </label>
           <textarea
             id="description"
             name="description"
@@ -123,12 +202,28 @@ const VenueForm = ({ onVenueAdded }) => {
             required
             placeholder="Describe the venue..."
             rows="4"
+            style={{
+              width: "100%",
+              padding: "0.8rem 1rem",
+              borderRadius: "10px",
+              border: "1px solid var(--glass-border)",
+              background: "rgba(255, 255, 255, 0.5)",
+              backdropFilter: "blur(10px)",
+              fontSize: "1rem",
+              color: "var(--text-primary)",
+              resize: "vertical",
+            }}
           />
         </div>
 
-        <div className="form-row">
+        <div
+          className="form-row"
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}
+        >
           <div className="form-group">
-            <label htmlFor="capacity">Capacity *</label>
+            <label htmlFor="capacity" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
+              Capacity *
+            </label>
             <input
               type="number"
               id="capacity"
@@ -138,11 +233,23 @@ const VenueForm = ({ onVenueAdded }) => {
               required
               min="1"
               placeholder="Maximum guests"
+              style={{
+                width: "100%",
+                padding: "0.8rem 1rem",
+                borderRadius: "10px",
+                border: "1px solid var(--glass-border)",
+                background: "rgba(255, 255, 255, 0.5)",
+                backdropFilter: "blur(10px)",
+                fontSize: "1rem",
+                color: "var(--text-primary)",
+              }}
             />
           </div>
 
           <div className="form-group">
-            <label htmlFor="pricePerDay">Price per Day ($) *</label>
+            <label htmlFor="pricePerDay" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
+              Price per Day ($) *
+            </label>
             <input
               type="number"
               id="pricePerDay"
@@ -153,12 +260,24 @@ const VenueForm = ({ onVenueAdded }) => {
               min="0"
               step="0.01"
               placeholder="0.00"
+              style={{
+                width: "100%",
+                padding: "0.8rem 1rem",
+                borderRadius: "10px",
+                border: "1px solid var(--glass-border)",
+                background: "rgba(255, 255, 255, 0.5)",
+                backdropFilter: "blur(10px)",
+                fontSize: "1rem",
+                color: "var(--text-primary)",
+              }}
             />
           </div>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="amenities">Amenities</label>
+        <div className="form-group" style={{ marginTop: "1.5rem" }}>
+          <label htmlFor="amenities" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
+            Amenities
+          </label>
           <input
             type="text"
             id="amenities"
@@ -166,12 +285,29 @@ const VenueForm = ({ onVenueAdded }) => {
             value={formData.amenities}
             onChange={handleInputChange}
             placeholder="Comma-separated list (e.g., WiFi, Parking, Audio System)"
+            style={{
+              width: "100%",
+              padding: "0.8rem 1rem",
+              borderRadius: "10px",
+              border: "1px solid var(--glass-border)",
+              background: "rgba(255, 255, 255, 0.5)",
+              backdropFilter: "blur(10px)",
+              fontSize: "1rem",
+              color: "var(--text-primary)",
+            }}
           />
-          <small className="form-help">Separate multiple amenities with commas</small>
+          <small
+            className="form-help"
+            style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "0.25rem", display: "block" }}
+          >
+            Separate multiple amenities with commas
+          </small>
         </div>
 
-        <div className="form-group">
-          <label htmlFor="images">Image URLs</label>
+        <div className="form-group" style={{ marginTop: "1.5rem" }}>
+          <label htmlFor="images" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
+            Image URLs
+          </label>
           <input
             type="text"
             id="images"
@@ -179,15 +315,37 @@ const VenueForm = ({ onVenueAdded }) => {
             value={formData.images}
             onChange={handleInputChange}
             placeholder="Comma-separated image URLs"
+            style={{
+              width: "100%",
+              padding: "0.8rem 1rem",
+              borderRadius: "10px",
+              border: "1px solid var(--glass-border)",
+              background: "rgba(255, 255, 255, 0.5)",
+              backdropFilter: "blur(10px)",
+              fontSize: "1rem",
+              color: "var(--text-primary)",
+            }}
           />
-          <small className="form-help">Separate multiple image URLs with commas</small>
+          <small
+            className="form-help"
+            style={{ color: "var(--text-secondary)", fontSize: "0.85rem", marginTop: "0.25rem", display: "block" }}
+          >
+            Separate multiple image URLs with commas
+          </small>
         </div>
 
-        <button type="submit" className="btn btn-primary btn-large" disabled={loading}>
+        <motion.button
+          type="submit"
+          className="btn btn-primary btn-large"
+          disabled={loading}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          style={{ width: "100%", marginTop: "2rem" }}
+        >
           {loading ? "Creating..." : "Create Venue"}
-        </button>
+        </motion.button>
       </form>
-    </div>
+    </motion.div>
   )
 }
 

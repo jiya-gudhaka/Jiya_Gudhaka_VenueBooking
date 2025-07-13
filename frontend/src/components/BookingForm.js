@@ -2,8 +2,9 @@
 
 import { useState, useEffect } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { motion, AnimatePresence } from "framer-motion" // Import motion and AnimatePresence
+import { motion, AnimatePresence } from "framer-motion"
 import { venueAPI, bookingAPI } from "../services/api"
+import Calendar from "./Calendar" // Import the new Calendar component
 
 const BookingForm = () => {
   const { id } = useParams()
@@ -13,12 +14,13 @@ const BookingForm = () => {
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState(null)
   const [success, setSuccess] = useState(false)
+  const [unavailableDates, setUnavailableDates] = useState([]) // State for unavailable dates
 
   const [formData, setFormData] = useState({
     customerName: "",
     customerEmail: "",
     customerPhone: "",
-    bookingDate: "",
+    bookingDate: "", // This will now be set by the Calendar component (YYYY-MM-DD string)
     eventType: "",
     guestCount: "",
     specialRequests: "",
@@ -28,23 +30,33 @@ const BookingForm = () => {
 
   useEffect(() => {
     if (id) {
-      // Only fetch if id is available
-      fetchVenueDetails()
+      fetchVenueDetailsAndAvailability()
     } else {
       setLoading(false)
       setError("No venue selected. Please go back to the venue list and select a venue to book.")
     }
   }, [id])
 
-  const fetchVenueDetails = async () => {
+  const fetchVenueDetailsAndAvailability = async () => {
     try {
       setLoading(true)
-      const data = await venueAPI.getById(id)
-      setVenue(data)
+      const venueData = await venueAPI.getById(id)
+      setVenue(venueData)
+
+      // Fetch availability for the next 6 months
+      const startDate = new Date().toISOString().split("T")[0]
+      const sixMonthsLater = new Date()
+      sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6)
+      const endDate = sixMonthsLater.toISOString().split("T")[0]
+
+      const availabilityData = await venueAPI.checkAvailability(id, startDate, endDate)
+      // Store totalUnavailable as YYYY-MM-DD strings for consistent comparison with Calendar
+      setUnavailableDates(availabilityData.totalUnavailable.map((date) => new Date(date).toISOString().split("T")[0]))
+
       setError(null) // Clear any previous errors
     } catch (err) {
-      setError("Failed to fetch venue details. Please try again.")
-      console.error("Error fetching venue:", err)
+      setError("Failed to fetch venue details or availability. Please try again.")
+      console.error("Error fetching venue or availability:", err)
     } finally {
       setLoading(false)
     }
@@ -62,6 +74,21 @@ const BookingForm = () => {
       setFormErrors((prev) => ({
         ...prev,
         [name]: "",
+      }))
+    }
+  }
+
+  // Handler for date selection from Calendar component
+  const handleDateSelect = (dateString) => {
+    setFormData((prev) => ({
+      ...prev,
+      bookingDate: dateString, // dateString is YYYY-MM-DD
+    }))
+    // Clear error for bookingDate
+    if (formErrors.bookingDate) {
+      setFormErrors((prev) => ({
+        ...prev,
+        bookingDate: "",
       }))
     }
   }
@@ -86,12 +113,18 @@ const BookingForm = () => {
     if (!formData.bookingDate) {
       errors.bookingDate = "Booking date is required"
     } else {
-      const selectedDate = new Date(formData.bookingDate)
-      const today = new Date()
-      today.setHours(0, 0, 0, 0)
+      // Convert selected date string to UTC Date object for accurate comparison
+      const [year, month, day] = formData.bookingDate.split("-").map(Number)
+      const selectedDateUTC = new Date(Date.UTC(year, month - 1, day))
 
-      if (selectedDate < today) {
+      const today = new Date()
+      const todayUTC = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
+
+      if (selectedDateUTC < todayUTC) {
         errors.bookingDate = "Booking date cannot be in the past"
+      } else if (unavailableDates.includes(formData.bookingDate)) {
+        // Check against normalized YYYY-MM-DD strings
+        errors.bookingDate = "This date is unavailable for booking."
       }
     }
 
@@ -123,9 +156,14 @@ const BookingForm = () => {
       setSubmitting(true)
       setError(null)
 
+      // Convert bookingDate (YYYY-MM-DD string) to UTC Date object for backend
+      const [year, month, day] = formData.bookingDate.split("-").map(Number)
+      const bookingDateForBackend = new Date(Date.UTC(year, month - 1, day))
+
       const bookingData = {
         ...formData,
         venue: id,
+        bookingDate: bookingDateForBackend.toISOString(), // Send as ISO string (UTC)
         guestCount: Number.parseInt(formData.guestCount),
       }
 
@@ -424,40 +462,6 @@ const BookingForm = () => {
             </div>
 
             <div className="form-group">
-              <label htmlFor="bookingDate" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
-                Event Date *
-              </label>
-              <input
-                type="date"
-                id="bookingDate"
-                name="bookingDate"
-                value={formData.bookingDate}
-                onChange={handleInputChange}
-                className={formErrors.bookingDate ? "error" : ""}
-                min={new Date().toISOString().split("T")[0]}
-                style={{
-                  width: "100%",
-                  padding: "0.8rem 1rem",
-                  borderRadius: "10px",
-                  border: `1px solid ${formErrors.bookingDate ? "var(--accent-rose)" : "var(--glass-border)"}`,
-                  background: "rgba(255, 255, 255, 0.5)",
-                  backdropFilter: "blur(10px)",
-                  fontSize: "1rem",
-                }}
-              />
-              {formErrors.bookingDate && (
-                <span className="field-error" style={{ color: "var(--accent-rose)", fontSize: "0.85rem" }}>
-                  {formErrors.bookingDate}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div
-            className="form-row"
-            style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.5rem", marginTop: "1.5rem" }}
-          >
-            <div className="form-group">
               <label htmlFor="eventType" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
                 Event Type *
               </label>
@@ -491,37 +495,52 @@ const BookingForm = () => {
                 </span>
               )}
             </div>
+          </div>
 
-            <div className="form-group">
-              <label htmlFor="guestCount" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
-                Number of Guests *
-              </label>
-              <input
-                type="number"
-                id="guestCount"
-                name="guestCount"
-                value={formData.guestCount}
-                onChange={handleInputChange}
-                className={formErrors.guestCount ? "error" : ""}
-                placeholder="Enter guest count"
-                min="1"
-                max={venue.capacity}
-                style={{
-                  width: "100%",
-                  padding: "0.8rem 1rem",
-                  borderRadius: "10px",
-                  border: `1px solid ${formErrors.guestCount ? "var(--accent-rose)" : "var(--glass-border)"}`,
-                  background: "rgba(255, 255, 255, 0.5)",
-                  backdropFilter: "blur(10px)",
-                  fontSize: "1rem",
-                }}
-              />
-              {formErrors.guestCount && (
-                <span className="field-error" style={{ color: "var(--accent-rose)", fontSize: "0.85rem" }}>
-                  {formErrors.guestCount}
-                </span>
-              )}
-            </div>
+          {/* Calendar Component for Booking Date */}
+          <div className="form-group" style={{ marginTop: "1.5rem" }}>
+            <label style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>Event Date *</label>
+            <Calendar
+              selectedDate={formData.bookingDate}
+              onSelectDate={handleDateSelect}
+              unavailableDates={unavailableDates}
+            />
+            {formErrors.bookingDate && (
+              <span className="field-error" style={{ color: "var(--accent-rose)", fontSize: "0.85rem" }}>
+                {formErrors.bookingDate}
+              </span>
+            )}
+          </div>
+
+          <div className="form-group" style={{ marginTop: "1.5rem" }}>
+            <label htmlFor="guestCount" style={{ fontWeight: "600", marginBottom: "0.5rem", display: "block" }}>
+              Number of Guests *
+            </label>
+            <input
+              type="number"
+              id="guestCount"
+              name="guestCount"
+              value={formData.guestCount}
+              onChange={handleInputChange}
+              className={formErrors.guestCount ? "error" : ""}
+              placeholder="Enter guest count"
+              min="1"
+              max={venue.capacity}
+              style={{
+                width: "100%",
+                padding: "0.8rem 1rem",
+                borderRadius: "10px",
+                border: `1px solid ${formErrors.guestCount ? "var(--accent-rose)" : "var(--glass-border)"}`,
+                background: "rgba(255, 255, 255, 0.5)",
+                backdropFilter: "blur(10px)",
+                fontSize: "1rem",
+              }}
+            />
+            {formErrors.guestCount && (
+              <span className="field-error" style={{ color: "var(--accent-rose)", fontSize: "0.85rem" }}>
+                {formErrors.guestCount}
+              </span>
+            )}
           </div>
 
           <div className="form-group" style={{ marginTop: "1.5rem" }}>

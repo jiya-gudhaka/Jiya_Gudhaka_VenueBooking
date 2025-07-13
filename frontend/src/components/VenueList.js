@@ -11,15 +11,17 @@ const VenueList = () => {
   const [error, setError] = useState(null)
   const [searchTerm, setSearchTerm] = useState("")
   const [filterCapacity, setFilterCapacity] = useState("")
+  const [selectedDate, setSelectedDate] = useState("") // New state for date filter
 
   useEffect(() => {
     fetchVenues()
-  }, [])
+  }, [selectedDate]) // Re-fetch when selectedDate changes
 
   const fetchVenues = async () => {
     try {
       setLoading(true)
-      const data = await venueAPI.getAll()
+      // Pass selectedDate to the API call
+      const data = await venueAPI.getAll(selectedDate)
       setVenues(data)
     } catch (err) {
       setError("Failed to fetch venues")
@@ -129,7 +131,7 @@ const VenueList = () => {
                 fontSize: "1.25rem",
               }}
             >
-              ⚙️
+              👥
             </span>
             <select
               value={filterCapacity}
@@ -143,6 +145,32 @@ const VenueList = () => {
               <option value="150">150+ guests</option>
               <option value="200">200+ guests</option>
             </select>
+          </div>
+        </div>
+
+        {/* New Date Filter */}
+        <div className="filter-box">
+          <div style={{ position: "relative" }}>
+            <span
+              style={{
+                position: "absolute",
+                left: "1rem",
+                top: "50%",
+                transform: "translateY(-50%)",
+                color: "var(--text-secondary)",
+                fontSize: "1.25rem",
+              }}
+            >
+              📅
+            </span>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              className="filter-select" // Reusing select style for consistency
+              style={{ paddingLeft: "3rem" }}
+              min={new Date().toISOString().split("T")[0]} // Prevent past dates
+            />
           </div>
         </div>
       </motion.div>
@@ -186,7 +214,6 @@ const VenueList = () => {
                     src={
                       venue.images[0] ||
                       "https://images.unsplash.com/photo-1519167758481-83f29c8a4e0a?w=400&h=250&fit=crop" ||
-                      "/placeholder.svg" ||
                       "/placeholder.svg"
                     }
                     alt={venue.name}
@@ -234,6 +261,28 @@ const VenueList = () => {
                           +{venue.amenities.length - 3} more
                         </motion.span>
                       )}
+                    </motion.div>
+                  )}
+
+                  {/* Indicator for general unavailability if no specific date is selected */}
+                  {!selectedDate && venue.unavailableDates && venue.unavailableDates.length > 0 && (
+                    <motion.div
+                      className="amenities" // Reusing styling for a tag-like appearance
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      transition={{ delay: 0.8 }}
+                      style={{ marginTop: "1rem" }}
+                    >
+                      <span
+                        className="amenity-tag"
+                        style={{
+                          background: "rgba(239, 71, 111, 0.1)",
+                          color: "var(--accent-rose)",
+                          border: "1px solid rgba(239, 71, 111, 0.2)",
+                        }}
+                      >
+                        ⚠️ Some dates unavailable
+                      </span>
                     </motion.div>
                   )}
 

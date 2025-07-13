@@ -371,57 +371,90 @@ const VenueDetails = () => {
                 📅 Availability (Next 30 Days)
               </h3>
               {availability.totalUnavailable.length > 0 ? (
-                <div className="unavailable-dates">
-                  <p style={{ marginBottom: "1rem", color: "var(--text-secondary)" }}>Unavailable dates:</p>
+                <>
                   <div
-                    className="date-list"
+                    className="legend"
                     style={{
                       display: "flex",
-                      flexWrap: "wrap",
-                      gap: "0.75rem",
+                      gap: "1rem",
+                      marginBottom: "1rem",
+                      fontSize: "0.9rem",
+                      color: "var(--text-secondary)",
                     }}
                   >
-                    {availability.totalUnavailable.slice(0, 5).map((date, index) => (
-                      <motion.span
-                        key={index}
-                        className="unavailable-date"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 1.2 + index * 0.1 }}
-                        style={{
-                          background: "rgba(239, 71, 111, 0.1)",
-                          color: "var(--accent-rose)",
-                          padding: "0.5rem 1rem",
-                          borderRadius: "20px",
-                          fontSize: "0.9rem",
-                          fontWeight: "500",
-                          border: "1px solid rgba(239, 71, 111, 0.2)",
-                        }}
-                      >
-                        {new Date(date).toLocaleDateString()}
-                      </motion.span>
-                    ))}
-                    {availability.totalUnavailable.length > 5 && (
-                      <motion.span
-                        className="more-dates"
-                        initial={{ scale: 0 }}
-                        animate={{ scale: 1 }}
-                        transition={{ delay: 1.7 }}
-                        style={{
-                          background: "var(--glass-white)",
-                          color: "var(--text-secondary)",
-                          padding: "0.5rem 1rem",
-                          borderRadius: "20px",
-                          fontSize: "0.9rem",
-                          fontWeight: "500",
-                          border: "1px solid var(--glass-border)",
-                        }}
-                      >
-                        +{availability.totalUnavailable.length - 5} more
-                      </motion.span>
-                    )}
+                    <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>❌ Booked</span>
+                    <span style={{ display: "flex", alignItems: "center", gap: "0.25rem" }}>🚫 Admin Blocked</span>
                   </div>
-                </div>
+                  <div className="unavailable-dates">
+                    <p style={{ marginBottom: "1rem", color: "var(--text-secondary)" }}>Unavailable dates:</p>
+                    <div
+                      className="date-list"
+                      style={{
+                        display: "flex",
+                        flexWrap: "wrap",
+                        gap: "0.75rem",
+                      }}
+                    >
+                      {availability.totalUnavailable.slice(0, 5).map((date, index) => {
+                        const isBooked = availability.bookedDates.some(
+                          (bookedDate) => new Date(bookedDate).toDateString() === new Date(date).toDateString(),
+                        )
+                        const isBlocked = availability.unavailableDates.some(
+                          (blockedDate) => new Date(blockedDate).toDateString() === new Date(date).toDateString(),
+                        )
+
+                        return (
+                          <motion.span
+                            key={index}
+                            className="unavailable-date"
+                            initial={{ scale: 0 }}
+                            animate={{ scale: 1 }}
+                            transition={{ delay: 1.2 + index * 0.1 }}
+                            style={{
+                              background: isBooked
+                                ? "rgba(239, 71, 111, 0.2)" // Darker red for booked
+                                : isBlocked
+                                  ? "rgba(239, 71, 111, 0.1)" // Lighter red for admin blocked
+                                  : "rgba(239, 71, 111, 0.1)", // Fallback
+                              color: "var(--accent-rose)",
+                              padding: "0.5rem 1rem",
+                              borderRadius: "20px",
+                              fontSize: "0.9rem",
+                              fontWeight: "500",
+                              border: isBooked
+                                ? "1px solid rgba(239, 71, 111, 0.4)"
+                                : "1px solid rgba(239, 71, 111, 0.2)",
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "0.25rem",
+                            }}
+                          >
+                            {isBooked ? "❌" : "🚫"} {new Date(date).toLocaleDateString()}
+                          </motion.span>
+                        )
+                      })}
+                      {availability.totalUnavailable.length > 5 && (
+                        <motion.span
+                          className="more-dates"
+                          initial={{ scale: 0 }}
+                          animate={{ scale: 1 }}
+                          transition={{ delay: 1.7 }}
+                          style={{
+                            background: "var(--glass-white)",
+                            color: "var(--text-secondary)",
+                            padding: "0.5rem 1rem",
+                            borderRadius: "20px",
+                            fontSize: "0.9rem",
+                            fontWeight: "500",
+                            border: "1px solid var(--glass-border)",
+                          }}
+                        >
+                          +{availability.totalUnavailable.length - 5} more
+                        </motion.span>
+                      )}
+                    </div>
+                  </div>
+                </>
               ) : (
                 <motion.p
                   className="available-message"

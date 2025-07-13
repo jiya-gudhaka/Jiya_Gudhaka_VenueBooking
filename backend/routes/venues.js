@@ -3,10 +3,35 @@ const router = express.Router()
 const Venue = require("../models/Venue")
 const Booking = require("../models/Booking")
 
-// GET /api/venues - Fetch all venues
+// GET /api/venues - Fetch all venues, optionally filtered by date
 router.get("/", async (req, res) => {
   try {
-    const venues = await Venue.find({ isActive: true }).sort({ createdAt: -1 })
+    const { date } = req.query
+    const query = { isActive: true }
+
+    if (date) {
+      const searchDate = new Date(date)
+      searchDate.setHours(0, 0, 0, 0) // Normalize to start of day
+
+      // Find bookings for the specific date
+      const bookedVenueIds = await Booking.find({
+        bookingDate: searchDate,
+        status: { $ne: "cancelled" },
+      }).distinct("venue")
+
+      // Find venues that have this date in their unavailableDates
+      const blockedVenueIds = await Venue.find({
+        "unavailableDates.date": searchDate,
+      }).distinct("_id")
+
+      // Combine all unavailable venue IDs
+      const unavailableVenueIds = [...new Set([...bookedVenueIds, ...blockedVenueIds])]
+
+      // Add to query: venue _id should not be in unavailableVenueIds
+      query._id = { $nin: unavailableVenueIds }
+    }
+
+    const venues = await Venue.find(query).sort({ createdAt: -1 })
     res.json(venues)
   } catch (error) {
     res.status(500).json({ message: "Error fetching venues", error: error.message })

@@ -32,7 +32,13 @@ const apiRequest = async (endpoint, options = {}) => {
 
 // Venue API
 export const venueAPI = {
-  getAll: () => apiRequest("/venues"),
+  getAll: (date = null) => {
+    let endpoint = "/venues"
+    if (date) {
+      endpoint += `?date=${date}`
+    }
+    return apiRequest(endpoint)
+  },
   getById: (id) => apiRequest(`/venues/${id}`),
   create: (venueData) =>
     apiRequest("/venues", {
